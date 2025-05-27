@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Client - Anzeige</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      position: absolute;
+      top: 0; left: 0;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="/static/main.js"></script>
+  <script>
+  document.addEventListener("keydown", (e) => {
+    if (e.key.toLowerCase() === "f") {
+      toggleFullscreen();
+      console.log("Vollbildmodus umgeschaltet");
+    }
+  });
+
+  function toggleFullscreen() {
+    const elem = document.documentElement;
+    if (!document.fullscreenElement) {
+      elem.requestFullscreen().catch(err => {
+        alert(`Fehler beim Aktivieren des Vollbildmodus: ${err.message}`);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  }
+</script>
+  <script>
+    setup(false); // false = Client-Modus (nur anzeigen)
+  </script>
+</body>
+</html>
