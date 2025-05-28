@@ -36,6 +36,7 @@ function setup(isServer) {
 
       if (serverMode) {
         // Maussteuerung
+        updateCursor(revealRadius);
         canvasMain.addEventListener("mousedown", () => {
           isDrawing = true;
           currentStroke = [];
@@ -78,6 +79,16 @@ function setup(isServer) {
           isDrawing = false;
           if (currentStroke.length > 0) {
             revealStrokes.push(currentStroke);
+          }
+        });
+
+        socket.on("draw", data => {
+          if (data.new) {
+            revealStrokes.push([]);
+          }
+          const lastStroke = revealStrokes[revealStrokes.length - 1];
+          if (lastStroke) {
+            lastStroke.push({ x: data.x, y: data.y, time: Date.now() });
           }
         });
       } else {
@@ -219,4 +230,21 @@ function animate() {
   ctxMain.drawImage(maskedCanvas, 0, 0);
 
   requestAnimationFrame(animate);
+}
+
+function updateCursor(radius) {
+  const size = radius * 2 + 4; // 4px Rand für Anti-Aliasing
+  const cursorCanvas = document.createElement("canvas");
+  cursorCanvas.width = size;
+  cursorCanvas.height = size;
+
+  const ctx = cursorCanvas.getContext("2d");
+  ctx.strokeStyle = "white";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(size / 2, size / 2, radius, 0, Math.PI * 2);
+  ctx.stroke();
+
+  const dataURL = cursorCanvas.toDataURL("image/png");
+  canvasMain.style.cursor = `url(${dataURL}) ${size / 2} ${size / 2}, auto`;
 }
