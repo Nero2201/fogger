@@ -17,4 +17,4 @@ def handle_draw(data):
     emit("draw", data, broadcast=True, include_self=False)
 
 if __name__ == "__main__":
-    socketio.run(app, host="0.0.0.0", port=1337)
+    socketio.run(app, host="0.0.0.0", port=1337, allow_unsafe_werkzeug=True)
