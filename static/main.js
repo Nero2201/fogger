@@ -8,6 +8,7 @@ let sharpImg = new Image();
 let isDrawing = false;
 let currentStroke = [];
 let revealStrokes = [];
+let mySessionId = null; // Eigene Session-ID
 
 const revealDuration = 0; // Sichtbarzeit in ms
 const fadeDuration = 3000;   // Ausblendzeit in ms
@@ -17,6 +18,12 @@ let serverMode = false;
 function setup(isServer) {
   serverMode = isServer;
   socket = io();
+
+  // Empfange die Session-ID vom Server
+  socket.on("session_id", (data) => {
+    mySessionId = data.session_id;
+    console.log("Meine Session-ID:", mySessionId);
+  });
 
   canvasMain = document.getElementById("canvas");
   ctxMain = canvasMain.getContext("2d");
@@ -84,21 +91,29 @@ function setup(isServer) {
 
         socket.on("draw", data => {
           if (data.new) {
-            revealStrokes.push([]);
+            // Neuer Stroke mit Session-ID
+            revealStrokes.push({ sessionId: data.session_id, points: [] });
           }
-          const lastStroke = revealStrokes[revealStrokes.length - 1];
-          if (lastStroke) {
-            lastStroke.push({ x: data.x, y: data.y, time: Date.now() });
+          // Finde den letzten Stroke mit derselben Session-ID
+          for (let i = revealStrokes.length - 1; i >= 0; i--) {
+            if (revealStrokes[i].sessionId === data.session_id) {
+              revealStrokes[i].points.push({ x: data.x, y: data.y, time: Date.now() });
+              break;
+            }
           }
         });
       } else {
         socket.on("draw", data => {
           if (data.new) {
-            revealStrokes.push([]);
+            // Neuer Stroke mit Session-ID
+            revealStrokes.push({ sessionId: data.session_id, points: [] });
           }
-          const lastStroke = revealStrokes[revealStrokes.length - 1];
-          if (lastStroke) {
-            lastStroke.push({ x: data.x, y: data.y, time: Date.now() });
+          // Finde den letzten Stroke mit derselben Session-ID
+          for (let i = revealStrokes.length - 1; i >= 0; i--) {
+            if (revealStrokes[i].sessionId === data.session_id) {
+              revealStrokes[i].points.push({ x: data.x, y: data.y, time: Date.now() });
+              break;
+            }
           }
         });
       }
@@ -116,7 +131,7 @@ function handleDraw(e) {
   const time = Date.now();
 
   currentStroke.push({ x, y, time });
-  socket.emit("draw", { x, y, new: currentStroke.length === 1 });
+  socket.emit("draw", { x, y, new: currentStroke.length === 1, session_id: mySessionId });
 }
 
 function handleTouchDraw(e) {
@@ -128,21 +143,21 @@ function handleTouchDraw(e) {
   const time = Date.now();
 
   currentStroke.push({ x, y, time });
-  socket.emit("draw", { x, y, new: currentStroke.length === 1 });
+  socket.emit("draw", { x, y, new: currentStroke.length === 1, session_id: mySessionId });
 }
 
 function animate() {
   const now = Date.now();
   ctxMask.clearRect(0, 0, canvasMask.width, canvasMask.height);
 
-  // Bestehende Striche zeichnen
+  // Bestehende Striche zeichnen (nach Session gruppiert)
   for (let s = revealStrokes.length - 1; s >= 0; s--) {
     const stroke = revealStrokes[s];
-    if (!stroke || stroke.length === 0) continue;
+    if (!stroke || !stroke.points || stroke.points.length === 0) continue;
 
-    for (let i = stroke.length - 1; i >= 0; i--) {
-      const current = stroke[i];
-      const next = stroke[i + 1];
+    for (let i = stroke.points.length - 1; i >= 0; i--) {
+      const current = stroke.points[i];
+      const next = stroke.points[i + 1];
 
       const elapsed = now - current.time;
       let alpha = 1.0;
@@ -150,7 +165,7 @@ function animate() {
         const fadeElapsed = elapsed - revealDuration;
         alpha = 1.0 - (fadeElapsed / fadeDuration);
         if (alpha <= 0) {
-          stroke.splice(i, 1);
+          stroke.points.splice(i, 1);
           continue;
         }
       }
@@ -175,7 +190,7 @@ function animate() {
       ctxMask.restore();
     }
 
-    if (stroke.length === 0) {
+    if (stroke.points.length === 0) {
       revealStrokes.splice(s, 1);
     }
   }
