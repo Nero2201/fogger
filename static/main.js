@@ -13,6 +13,7 @@ let mySessionId = null; // Eigene Session-ID
 const revealDuration = 0; // Sichtbarzeit in ms
 const fadeDuration = 3000;   // Ausblendzeit in ms
 const revealRadius = 20;
+const maxConnectionDistance = 50; // Maximale Distanz für Linienverbindung
 let serverMode = false;
 
 function setup(isServer) {
@@ -51,13 +52,13 @@ function setup(isServer) {
         canvasMain.addEventListener("mouseup", () => {
           isDrawing = false;
           if (currentStroke.length > 0) {
-            revealStrokes.push(currentStroke);
+            revealStrokes.push({ sessionId: mySessionId, points: currentStroke });
           }
         });
         canvasMain.addEventListener("mouseleave", () => {
           isDrawing = false;
           if (currentStroke.length > 0) {
-            revealStrokes.push(currentStroke);
+            revealStrokes.push({ sessionId: mySessionId, points: currentStroke });
           }
         });
         canvasMain.addEventListener("mousemove", handleDraw);
@@ -78,14 +79,14 @@ function setup(isServer) {
         canvasMain.addEventListener("touchend", () => {
           isDrawing = false;
           if (currentStroke.length > 0) {
-            revealStrokes.push(currentStroke);
+            revealStrokes.push({ sessionId: mySessionId, points: currentStroke });
           }
         });
 
         canvasMain.addEventListener("touchcancel", () => {
           isDrawing = false;
           if (currentStroke.length > 0) {
-            revealStrokes.push(currentStroke);
+            revealStrokes.push({ sessionId: mySessionId, points: currentStroke });
           }
         });
 
@@ -178,10 +179,17 @@ function animate() {
       ctxMask.lineCap = "round";
 
       if (next && now - next.time < revealDuration + fadeDuration) {
-        ctxMask.beginPath();
-        ctxMask.moveTo(next.x, next.y);
-        ctxMask.lineTo(current.x, current.y);
-        ctxMask.stroke();
+        const distance = Math.sqrt(Math.pow(next.x - current.x, 2) + Math.pow(next.y - current.y, 2));
+        if (distance <= maxConnectionDistance) {
+          ctxMask.beginPath();
+          ctxMask.moveTo(next.x, next.y);
+          ctxMask.lineTo(current.x, current.y);
+          ctxMask.stroke();
+        } else {
+          ctxMask.beginPath();
+          ctxMask.arc(current.x, current.y, revealRadius, 0, Math.PI * 2);
+          ctxMask.fill();
+        }
       } else {
         ctxMask.beginPath();
         ctxMask.arc(current.x, current.y, revealRadius, 0, Math.PI * 2);
@@ -217,10 +225,17 @@ function animate() {
       ctxMask.lineCap = "round";
 
       if (next && now - next.time < revealDuration + fadeDuration) {
-        ctxMask.beginPath();
-        ctxMask.moveTo(next.x, next.y);
-        ctxMask.lineTo(current.x, current.y);
-        ctxMask.stroke();
+        const distance = Math.sqrt(Math.pow(next.x - current.x, 2) + Math.pow(next.y - current.y, 2));
+        if (distance <= maxConnectionDistance) {
+          ctxMask.beginPath();
+          ctxMask.moveTo(next.x, next.y);
+          ctxMask.lineTo(current.x, current.y);
+          ctxMask.stroke();
+        } else {
+          ctxMask.beginPath();
+          ctxMask.arc(current.x, current.y, revealRadius, 0, Math.PI * 2);
+          ctxMask.fill();
+        }
       } else {
         ctxMask.beginPath();
         ctxMask.arc(current.x, current.y, revealRadius, 0, Math.PI * 2);
