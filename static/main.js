@@ -36,11 +36,11 @@ const effect = {
   blurRenderScale: 0.5,
   fogTextureOpacity: 0.38,
   fogTint: "rgba(210, 220, 224, 0.14)",
-  revealDuration: 0,
+  revealDuration: 8000,
   fadeDuration: 3000,
-  revealRadius: 28,
+  revealRadius: 10,
   revealEdgeSoftness: 4,
-  maxConnectionDistance: 100,
+  maxConnectionDistance: 85,
 };
 
 fogOverlayImg.decoding = "async";
@@ -425,7 +425,8 @@ function drawCover(context, media, width, height) {
 }
 
 function updateCursor(radius) {
-  const size = radius * 2 + 8;
+  //const size = radius * 2 + 8;
+  const size = 1;
   const cursorCanvas = document.createElement("canvas");
   cursorCanvas.width = size;
   cursorCanvas.height = size;
